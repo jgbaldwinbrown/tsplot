@@ -7,7 +7,7 @@ main = function() {
 	args = commandArgs(trailingOnly=TRUE)
 	data = as.data.frame(fread(args[1], header=TRUE))
 
-	p = ggplot(data, aes(gen, minor_f, color = factor(repl))) + 
+	p = ggplot(data, aes(gen, minor_f, color = factor(repl), groups=factor(chrposrepl))) + 
 		geom_line() +
 		geom_point() +
 		labs(title = "Allele frequencies over time", x = "Time (months)", y = "Minor allele frequency") +

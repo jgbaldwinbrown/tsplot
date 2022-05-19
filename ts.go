@@ -217,18 +217,20 @@ func ReadSync(path string, bed []BedE) ([]SyncE, error) {
 }
 
 func PlottableLineOut(major, minor int64, chr string, pos int64, info InfoE) []string {
-	out := make([]string, 8)
+	out := make([]string, 10)
 	total := major + minor
 	majorf := float64(major) / float64(total)
 	minorf := float64(minor) / float64(total)
 	out[0] = chr
 	out[1] = strconv.FormatInt(pos, 10)
-	out[2] = strconv.FormatInt(major, 10)
-	out[3] = strconv.FormatInt(minor, 10)
-	out[4] = strconv.FormatFloat(majorf, 'e', -1, 64)
-	out[5] = strconv.FormatFloat(minorf, 'e', -1, 64)
-	out[6] = info.Line[0]
-	out[7] = info.Line[1]
+	out[2] = out[0] + "_" + out[1]
+	out[3] = strconv.FormatInt(major, 10)
+	out[4] = strconv.FormatInt(minor, 10)
+	out[5] = strconv.FormatFloat(majorf, 'e', -1, 64)
+	out[6] = strconv.FormatFloat(minorf, 'e', -1, 64)
+	out[7] = info.Line[0]
+	out[8] = info.Line[1]
+	out[9] = out[2] + "_" + out[8]
 	return out
 }
 
@@ -304,7 +306,7 @@ func ToPlottable(sync []SyncE, info []InfoE) [][]string {
 }
 
 func WritePlottable(w io.Writer, plottable [][]string) {
-	fmt.Fprintln(w, "chr\tpos\tmajor_c\tminor_c\tmajor_f\tminor_f\tgen\trepl")
+	fmt.Fprintln(w, "chr\tpos\tchrpos\tmajor_c\tminor_c\tmajor_f\tminor_f\tgen\trepl\tchrposrepl")
 	for _, p := range plottable {
 		io.WriteString(w, strings.Join(p, "\t") + "\n")
 	}
