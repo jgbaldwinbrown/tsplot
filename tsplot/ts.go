@@ -1,4 +1,4 @@
-package main
+package tsplot
 
 import (
 	"fmt"
@@ -9,23 +9,7 @@ import (
 	"github.com/jgbaldwinbrown/lscan/lscan"
 	"os"
 	"bufio"
-	"flag"
 )
-
-type Flags struct {
-	SyncPath string
-	BedPath string
-	InfoPath string
-}
-
-func GetFlags() Flags {
-	f := Flags{}
-	flag.StringVar(&f.SyncPath, "s", "", "Path to sync file with allele frequencies")
-	flag.StringVar(&f.BedPath, "b", "", "Path to bed file with regions to include")
-	flag.StringVar(&f.InfoPath, "i", "", "Path to info file with identities of sync columns")
-	flag.Parse()
-	return f
-}
 
 func ScanPath(path string) (*bufio.Scanner, *os.File, error) {
 	r, err := os.Open(path)
@@ -310,29 +294,4 @@ func WritePlottable(w io.Writer, plottable [][]string) {
 	for _, p := range plottable {
 		io.WriteString(w, strings.Join(p, "\t") + "\n")
 	}
-}
-
-func main() {
-	f := GetFlags()
-
-	info, err := ReadInfo(f.InfoPath)
-	if err != nil {
-		panic(err)
-	}
-
-	bed, err := ReadBed(f.BedPath)
-	if err != nil {
-		panic(err)
-	}
-
-	sync, err := ReadSync(f.SyncPath, bed)
-	if err != nil {
-		panic(err)
-	}
-
-	plottable := ToPlottable(sync, info)
-
-	w := bufio.NewWriter(os.Stdout)
-	defer w.Flush()
-	WritePlottable(w, plottable)
 }
