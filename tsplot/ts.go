@@ -1,6 +1,7 @@
 package tsplot
 
 import (
+	"os/exec"
 	"fmt"
 	"io"
 	"strings"
@@ -10,6 +11,11 @@ import (
 	"os"
 	"bufio"
 )
+
+type Plottable struct {
+	Outprefix string
+	Plottable [][]string
+}
 
 func ScanPath(path string) (*bufio.Scanner, *os.File, error) {
 	r, err := os.Open(path)
@@ -289,9 +295,74 @@ func ToPlottable(sync []SyncE, info []InfoE) [][]string {
 	return p
 }
 
+func ToSeparatePlottables(sync []SyncE, bed []BedE, info []InfoE, outprefix string) []Plottable {
+	var out []Plottable
+	for _, b := range bed {
+		var ss []SyncE
+		bb := []BedE{b}
+		for _, s := range sync {
+			if InBed(s.Chr, s.Pos, bb) {
+				ss = append(ss, s)
+			}
+		}
+		p := ToPlottable(ss, info)
+		pref := outprefix
+		if len(p) > 0 {
+			pref = fmt.Sprintf("%v_%v_%v_%v", outprefix, b.Chr, b.Start, b.End)
+		}
+		out = append(out, Plottable{pref, p})
+	}
+	return out
+}
+
 func WritePlottable(w io.Writer, plottable [][]string) {
 	fmt.Fprintln(w, "chr\tpos\tchrpos\tmajor_c\tminor_c\tmajor_f\tminor_f\tgen\trepl\tchrposrepl")
 	for _, p := range plottable {
 		io.WriteString(w, strings.Join(p, "\t") + "\n")
 	}
+}
+
+const (
+	plottablesuffix string = "_plottable.txt"
+	plottedsuffix string = "_plotted.pdf"
+)
+
+func WritePlottableToFile(p [][]string, outprefix string) error {
+	txtout, err := os.Create(outprefix + plottablesuffix)
+	if err != nil {
+		return err
+	}
+	defer txtout.Close()
+	b := bufio.NewWriter(txtout)
+	defer b.Flush()
+
+	WritePlottable(b, p)
+	return nil
+}
+
+func PlotPlottableFile(inpath, outpath string) error {
+	cmd := exec.Command("plotafs", inpath, outpath)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	return err
+}
+
+func PlotPlottable(p Plottable) error {
+	err := WritePlottableToFile(p.Plottable, p.Outprefix)
+	if err != nil {
+		return err
+	}
+	err = PlotPlottableFile(p.Outprefix + plottablesuffix, p.Outprefix + plottedsuffix)
+	return err
+}
+
+func PlotPlottables(ps ...Plottable) error {
+	for _, p := range ps {
+		err := PlotPlottable(p)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
