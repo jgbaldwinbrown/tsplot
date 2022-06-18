@@ -102,6 +102,11 @@ func ReadBed(path string) ([]BedE, error) {
 	}
 	defer r.Close()
 
+	out, err := ReadBedScanner(s)
+	return out, err
+}
+
+func ReadBedScanner(s *bufio.Scanner) ([]BedE, error) {
 	scanf := lscan.ByByte('\t')
 	out := []BedE{}
 	line := []string{}
@@ -114,6 +119,23 @@ func ReadBed(path string) ([]BedE, error) {
 		out = append(out, b)
 	}
 	return out, nil
+}
+
+func ResizeBed(bed []BedE, size int64) []BedE {
+	var out []BedE
+	for _, b := range bed {
+		mid := (b.End + b.Start / 2)
+		b.End = mid + size/2
+		b.Start = mid - size/2
+		out = append(out, b)
+	}
+	return out
+}
+
+func WriteBed(w io.Writer, bed []BedE) {
+	for _, b := range bed {
+		fmt.Fprintf(w, "%v\t%v\t%v\n", b.Chr, b.Start, b.End)
+	}
 }
 
 type SyncE struct {
