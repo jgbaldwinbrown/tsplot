@@ -39,7 +39,7 @@ func ReadPlottable(r io.Reader) (p [][]string) {
 
 func PlottableToAfs(ps [][]string) ([]accel.Af, error) {
 	var afs []accel.Af
-	for _, p := range ps {
+	for _, p := range ps[1:] {
 		af, err := PlottableLineToAf(p)
 		if err != nil {
 			return nil, err
