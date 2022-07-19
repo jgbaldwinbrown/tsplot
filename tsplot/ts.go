@@ -337,6 +337,21 @@ func ToSeparatePlottables(sync []SyncE, bed []BedE, info []InfoE, outprefix stri
 	return out
 }
 
+func PlottableHeader() []string {
+	return []string{
+		"chr",
+		"pos",
+		"chrpos",
+		"major_c",
+		"minor_c",
+		"major_f",
+		"minor_f",
+		"gen",
+		"repl",
+		"chrposrepl",
+	}
+}
+
 func WritePlottable(w io.Writer, plottable [][]string) {
 	fmt.Fprintln(w, "chr\tpos\tchrpos\tmajor_c\tminor_c\tmajor_f\tminor_f\tgen\trepl\tchrposrepl")
 	for _, p := range plottable {
