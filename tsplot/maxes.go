@@ -23,6 +23,6 @@ func PathsToMaxes(paths []string) ([]float64, error) {
 		afsets = append(afsets, afs)
 	}
 
-	maxes := accel.MaxSlopeTimes(afsets)
-	return maxes, nil
+	maxes, err := accel.MaxSlopeTimes(afsets)
+	return maxes, err
 }
