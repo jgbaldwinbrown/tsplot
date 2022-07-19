@@ -4,7 +4,7 @@ import (
 	"os"
 	"bufio"
 	"flag"
-	"../tsplot"
+	"github.com/jgbaldwinbrown/tsplot/tsplot"
 )
 
 type Flags struct {

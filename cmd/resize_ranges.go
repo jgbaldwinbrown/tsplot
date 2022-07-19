@@ -1,7 +1,7 @@
 package main
 
 import (
-	"../tsplot"
+	"github.com/jgbaldwinbrown/tsplot/tsplot"
 	"flag"
 	"bufio"
 	"os"
