@@ -1,19 +1,21 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"bufio"
-	"flag"
 	"github.com/jgbaldwinbrown/tsplot/tsplot"
+	"github.com/jgbaldwinbrown/accel/accel"
 )
 
 func main() {
-	p, err := ReadPlottable(os.Stdin)
+	p := tsplot.ReadPlottable(os.Stdin)
+
+	afs, err := tsplot.PlottableToAfs(p)
 	if err != nil {
 		panic(err)
 	}
 
-	afs := PlottableToAfs(p)
-	s := accel.SmoothedMeanSlope(afs)
-	fmt.Print(s)
+	xs, ys := accel.SmoothedMeanSlope(afs)
+	fmt.Print(xs)
+	fmt.Print(ys)
 }
