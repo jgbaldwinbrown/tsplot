@@ -1,6 +1,7 @@
 package tsplot
 
 import (
+	"regexp"
 	"os/exec"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"github.com/jgbaldwinbrown/lscan/lscan"
 	"os"
 	"bufio"
+	"compress/gzip"
 )
 
 type Plottable struct {
@@ -202,11 +204,29 @@ func InBed(chr string, pos int64, bed []BedE) bool {
 }
 
 func ReadSync(path string, bed []BedE) ([]SyncE, error) {
-	s, r, err := ScanPath(path)
+	conn, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	defer r.Close()
+	defer conn.Close()
+
+	var g *gzip.Reader
+	var r io.Reader
+
+	re := regexp.MustCompile(`\.gz$`)
+	if re.MatchString(path) {
+		g, err = gzip.NewReader(conn)
+		if err != nil {
+			return nil, err
+		}
+		r = g
+		defer g.Close()
+	} else {
+		r = conn
+	}
+
+	s := bufio.NewScanner(r)
+	s.Buffer(make([]byte, 0), 1e12)
 
 	scanf := lscan.ByByte('\t')
 	out := []SyncE{}
