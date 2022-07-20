@@ -397,6 +397,16 @@ func WritePlottableToFile(p [][]string, outprefix string) error {
 	return nil
 }
 
+func WritePlottablesToFiles(plottables ...Plottable) error {
+	for _, plottable := range plottables {
+		err := WritePlottableToFile(plottable.Plottable, plottable.Outprefix)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func PlotPlottableFile(inpath, outpath string) error {
 	cmd := exec.Command("plotafs", inpath, outpath)
 	cmd.Stdout = os.Stdout
@@ -406,11 +416,7 @@ func PlotPlottableFile(inpath, outpath string) error {
 }
 
 func PlotPlottable(p Plottable) error {
-	err := WritePlottableToFile(p.Plottable, p.Outprefix)
-	if err != nil {
-		return err
-	}
-	err = PlotPlottableFile(p.Outprefix + plottablesuffix, p.Outprefix + plottedsuffix)
+	err := PlotPlottableFile(p.Outprefix + plottablesuffix, p.Outprefix + plottedsuffix)
 	return err
 }
 

@@ -15,6 +15,11 @@ type SyncBedInfo struct {
 	Category string
 }
 
+type SbiOptions struct {
+	WritePlottables bool
+	Plot bool
+}
+
 func ReadSyncBedInfo(r io.Reader) ([]SyncBedInfo, error) {
 	var out []SyncBedInfo
 
@@ -62,26 +67,36 @@ func SplitSbiByCategory(sbis []SyncBedInfo) [][]SyncBedInfo {
 	return out
 }
 
-func ProcessSyncBedInfo(sbi SyncBedInfo) error {
+func ProcessSyncBedInfo(sbi SyncBedInfo, o SbiOptions) error {
 	bed, err := ReadBed(sbi.Bed)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	sync, err := ReadSync(sbi.Sync, bed)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	info, err := ReadInfo(sbi.Info)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	plottables := ToSeparatePlottables(sync, bed, info, sbi.Out)
-	err = PlotPlottables(plottables...)
-	if err != nil {
-		panic(err)
+
+	if o.WritePlottables {
+		err := WritePlottablesToFiles(plottables...)
+		if err != nil {
+			return err
+		}
+	}
+
+	if o.Plot {
+		err = PlotPlottables(plottables...)
+		if err != nil {
+			return err
+		}
 	}
 
 	var paths []string
@@ -90,6 +105,10 @@ func ProcessSyncBedInfo(sbi SyncBedInfo) error {
 	}
 
 	maxes, err := PathsToMaxes(paths)
+	if err != nil {
+		return err
+	}
+
 	for i, max := range maxes {
 		fmt.Printf("%v\t%v\t%v\n", paths[i], max, sbi.Category)
 	}
@@ -97,9 +116,9 @@ func ProcessSyncBedInfo(sbi SyncBedInfo) error {
 	return nil
 }
 
-func ProcessSyncBedInfos(sbis []SyncBedInfo) error {
+func ProcessSyncBedInfos(sbis []SyncBedInfo, o SbiOptions) error {
 	for _, sbi := range sbis {
-		err := ProcessSyncBedInfo(sbi)
+		err := ProcessSyncBedInfo(sbi, o)
 		if err != nil {
 			return err
 		}
@@ -107,9 +126,9 @@ func ProcessSyncBedInfos(sbis []SyncBedInfo) error {
 	return nil
 }
 
-func ProcessSyncBedInfoSets(sbiSets [][]SyncBedInfo) error {
+func ProcessSyncBedInfoSets(sbiSets [][]SyncBedInfo, o SbiOptions) error {
 	for _, set := range sbiSets {
-		err := ProcessSyncBedInfos(set)
+		err := ProcessSyncBedInfos(set, o)
 		if err != nil {
 			return err
 		}

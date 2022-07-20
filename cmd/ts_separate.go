@@ -42,6 +42,8 @@ func main() {
 
 	plottables := tsplot.ToSeparatePlottables(sync, bed, info, f.OutputPrefix)
 
+	err = tsplot.WritePlottablesToFiles(plottables...)
+
 	err = tsplot.PlotPlottables(plottables...)
 	if err != nil {
 		panic(err)
