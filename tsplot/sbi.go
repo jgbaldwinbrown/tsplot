@@ -18,6 +18,7 @@ type SyncBedInfo struct {
 type SbiOptions struct {
 	WritePlottables bool
 	Plot bool
+	Threads int
 }
 
 func ReadSyncBedInfo(r io.Reader) ([]SyncBedInfo, error) {
@@ -129,6 +130,31 @@ func ProcessSyncBedInfos(sbis []SyncBedInfo, o SbiOptions) error {
 func ProcessSyncBedInfoSets(sbiSets [][]SyncBedInfo, o SbiOptions) error {
 	for _, set := range sbiSets {
 		err := ProcessSyncBedInfos(set, o)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ProcessSyncBedInfoSetsParallel(sbiSets [][]SyncBedInfo, o SbiOptions) error {
+	njobs := len(sbiSets)
+	jobs := make(chan []SyncBedInfo, njobs)
+	errs := make(chan error, njobs)
+	nworkers := o.Threads
+	for i:=0; i<nworkers; i++ {
+		go func() {
+			for job := range jobs {
+				errs <- ProcessSyncBedInfos(job, o)
+			}
+		}()
+	}
+	for _, set := range sbiSets {
+		jobs <- set
+	}
+	close(jobs)
+	for i := 0; i<njobs; i++ {
+		err := <-errs
 		if err != nil {
 			return err
 		}
