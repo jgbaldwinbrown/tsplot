@@ -11,6 +11,7 @@ main = function() {
 		geom_line() +
 		geom_point() +
 		labs(title = "Allele frequencies over time", x = "Time (months)", y = "Minor allele frequency") +
+		ylim(0, 1) +
 		scale_color_discrete(name = "Replicate") +
 		theme_bw()
 

@@ -153,11 +153,16 @@ func ProcessSyncBedInfoSetsParallel(sbiSets [][]SyncBedInfo, o SbiOptions) error
 		jobs <- set
 	}
 	close(jobs)
+
+	var errlist errList
 	for i := 0; i<njobs; i++ {
 		err := <-errs
 		if err != nil {
-			return err
+			errlist = append(errlist, err)
 		}
+	}
+	if errlist != nil {
+		return errlist
 	}
 	return nil
 }
