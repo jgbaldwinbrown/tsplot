@@ -16,8 +16,8 @@ type SyncBedInfo struct {
 }
 
 type SbiOptions struct {
-	WritePlottables bool
-	Plot bool
+	NoWritePlottables bool
+	NoPlot bool
 	Threads int
 }
 
@@ -69,31 +69,21 @@ func SplitSbiByCategory(sbis []SyncBedInfo) [][]SyncBedInfo {
 }
 
 func ProcessSyncBedInfo(sbi SyncBedInfo, o SbiOptions) error {
-	bed, err := ReadBed(sbi.Bed)
-	if err != nil {
-		return err
-	}
-
-	sync, err := ReadSync(sbi.Sync, bed)
-	if err != nil {
-		return err
-	}
-
-	info, err := ReadInfo(sbi.Info)
+	sync, bed, info, err := ReadSBI(sbi)
 	if err != nil {
 		return err
 	}
 
 	plottables := ToSeparatePlottables(sync, bed, info, sbi.Out)
 
-	if o.WritePlottables {
+	if !o.NoWritePlottables {
 		err := WritePlottablesToFiles(plottables...)
 		if err != nil {
 			return err
 		}
 	}
 
-	if o.Plot {
+	if !o.NoPlot {
 		err = PlotPlottables(plottables...)
 		if err != nil {
 			return err

@@ -1,6 +1,7 @@
 package tsplot
 
 import (
+	"math"
 	"regexp"
 	"os/exec"
 	"fmt"
@@ -33,6 +34,7 @@ func ScanPath(path string) (*bufio.Scanner, *os.File, error) {
 type InfoE struct {
 	Line []string
 	Gen int64
+	Repl string
 }
 
 func ParseInfoE(line []string) (InfoE, error) {
@@ -42,8 +44,11 @@ func ParseInfoE(line []string) (InfoE, error) {
 	}
 
 	ie.Line = line
+	ie.Repl = line[1]
+
 	var err error
 	ie.Gen, err = strconv.ParseInt(line[0], 0, 64)
+
 	return ie, err
 }
 
@@ -73,6 +78,7 @@ type BedE struct {
 	Chr string
 	Start int64
 	End int64
+	Val float64
 }
 
 func ParseBedE(line []string) (BedE, error) {
@@ -92,6 +98,14 @@ func ParseBedE(line []string) (BedE, error) {
 	b.End, err = strconv.ParseInt(line[2], 0, 64)
 	if err != nil {
 		return b, err
+	}
+
+	b.Val = math.NaN()
+	if len(line) >= 4 {
+		b.Val, err = strconv.ParseFloat(line[3], 64)
+		if err != nil {
+			b.Val = math.NaN()
+		}
 	}
 
 	return b, nil
@@ -126,9 +140,9 @@ func ReadBedScanner(s *bufio.Scanner) ([]BedE, error) {
 func ResizeBed(bed []BedE, size int64) []BedE {
 	var out []BedE
 	for _, b := range bed {
-		mid := (b.End + b.Start / 2)
-		b.End = mid + size/2
-		b.Start = mid - size/2
+		mid := (b.End + b.Start) / 2
+		b.End = mid + (size/2)
+		b.Start = mid - (size/2)
 		out = append(out, b)
 	}
 	return out
@@ -154,7 +168,7 @@ func ParseSyncChrPos(line []string) (chr string, pos int64, err error) {
 
 	chr = line[0]
 	pos, err = strconv.ParseInt(line[1], 0, 64)
-	pos -= 1
+	// pos -= 1
 	return chr, pos, err
 }
 

@@ -8,8 +8,8 @@ import (
 
 func GetOpts() tsplot.SbiOptions {
 	var opts tsplot.SbiOptions
-	flag.BoolVar(&opts.WritePlottables, "w", true, "Do not write to plottable files (they already exist)")
-	flag.BoolVar(&opts.Plot, "p", true, "Do not plot plottables")
+	flag.BoolVar(&opts.NoWritePlottables, "w", false, "Do not write to plottable files (they already exist)")
+	flag.BoolVar(&opts.NoPlot, "p", false, "Do not plot plottables")
 	flag.IntVar(&opts.Threads, "t", 1, "Threads to use")
 	flag.Parse()
 
