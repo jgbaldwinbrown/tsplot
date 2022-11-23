@@ -19,6 +19,8 @@ type SbiOptions struct {
 	NoWritePlottables bool
 	NoPlot bool
 	Threads int
+	PlotBeneficial bool
+	PlotUgly bool
 }
 
 func ReadSyncBedInfo(r io.Reader) ([]SyncBedInfo, error) {

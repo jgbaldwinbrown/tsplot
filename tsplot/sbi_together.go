@@ -14,6 +14,8 @@ func GetOpts() SbiOptions {
 	var opts SbiOptions
 	flag.BoolVar(&opts.NoWritePlottables, "w", false, "Do not write to plottable files (they already exist)")
 	flag.BoolVar(&opts.NoPlot, "p", false, "Do not plot plottables")
+	flag.BoolVar(&opts.PlotBeneficial, "b", false, "Plot beneficial alleles, not minor alleles")
+	flag.BoolVar(&opts.PlotUgly, "u", false, "Plot ugly-style, i.e. lots of extra lines")
 	flag.IntVar(&opts.Threads, "t", 1, "Threads to use")
 	flag.Parse()
 
@@ -27,6 +29,8 @@ type InfoSelection struct {
 type PlotCfg struct {
 	Sbi SyncBedInfo
 	ToUse InfoSelection
+	BeneficialSbi SyncBedInfo
+	BeneficialToUse InfoSelection
 }
 
 type MultiPlotCfg struct {
@@ -84,6 +88,14 @@ func ToPlottableSubset(sync []SyncE, info []InfoE, toUse InfoSelection) [][]stri
 	return ToPlottable(newsync, newinfo)
 }
 
+func ToPlottableBeneficialSubset(sync []SyncE, info []InfoE, toUse InfoSelection) [][]string {
+	cols := GoodCols(info, toUse)
+	newsync := SubsetSyncByCols(sync, cols)
+	newinfo := SubsetInfoByCols(info, cols)
+	SetBeneficials(newsync, info)
+	return ToPlottablePlotcol(newsync, newinfo)
+}
+
 
 func ProcessMultiPlotCfg(cfg MultiPlotCfg, o SbiOptions) error {
 	var plottable [][]string
@@ -96,7 +108,11 @@ func ProcessMultiPlotCfg(cfg MultiPlotCfg, o SbiOptions) error {
 			if err != nil {
 				return err
 			}
-			plottable = append(plottable, ToPlottableSubset(sync, info, pcfg.ToUse)...)
+			if o.PlotBeneficial {
+				plottable = append(plottable, ToPlottableBeneficialSubset(sync, info, pcfg.ToUse)...)
+			} else {
+				plottable = append(plottable, ToPlottableSubset(sync, info, pcfg.ToUse)...)
+			}
 		}
 
 
@@ -108,7 +124,7 @@ func ProcessMultiPlotCfg(cfg MultiPlotCfg, o SbiOptions) error {
 
 	plotpath := cfg.Outpre + plottedsuffix
 	if !o.NoPlot {
-		err := PlotPlottableFile(plottablepath, plotpath)
+		err := PlotPlottableFileTip(plottablepath, plotpath, o.PlotUgly)
 		if err != nil {
 			return err
 		}

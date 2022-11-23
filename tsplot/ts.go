@@ -159,6 +159,8 @@ type SyncE struct {
 	Pos int64
 	Afs [][]int64
 	Line []string
+	PlotcolPrimary int
+	PlotcolSecondary int
 }
 
 func ParseSyncChrPos(line []string) (chr string, pos int64, err error) {
@@ -343,10 +345,26 @@ func ToPlottableLine(s SyncE, info []InfoE) [][]string {
 	return out
 }
 
+func ToPlottableLinePlotcol(s SyncE, info []InfoE) [][]string {
+	var out [][]string
+	for i, afset := range s.Afs {
+		out = append(out, PlottableLineOut(afset[s.PlotcolSecondary], afset[s.PlotcolPrimary], s.Chr, s.Pos, info[i]))
+	}
+	return out
+}
+
 func ToPlottable(sync []SyncE, info []InfoE) [][]string {
 	var p [][]string
 	for _, s := range sync {
 		p = append(p, ToPlottableLine(s, info)...)
+	}
+	return p
+}
+
+func ToPlottablePlotcol(sync []SyncE, info []InfoE) [][]string {
+	var p [][]string
+	for _, s := range sync {
+		p = append(p, ToPlottableLinePlotcol(s, info)...)
 	}
 	return p
 }
@@ -423,6 +441,17 @@ func WritePlottablesToFiles(plottables ...Plottable) error {
 
 func PlotPlottableFile(inpath, outpath string) error {
 	cmd := exec.Command("plotafs", inpath, outpath)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	return err
+}
+
+func PlotPlottableFileTip(inpath, outpath string, ugly bool) error {
+	cmd := exec.Command("plotafstip", inpath, outpath)
+	if ugly {
+		cmd = exec.Command("plotafstip_ugly", inpath, outpath)
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()

@@ -6,6 +6,7 @@ require (
 	github.com/jgbaldwinbrown/accel v0.0.0-20220720212108-133aa987be47
 	github.com/jgbaldwinbrown/lscan v0.0.0-20220503191523-b392936a6669
 	github.com/jgbaldwinbrown/pmap v0.0.0-20220816212435-6b6424c83b2a
+	github.com/sajari/regression v1.0.1
 	golang.org/x/exp v0.0.0-20221114191408-850992195362
 )
 
