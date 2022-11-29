@@ -15,6 +15,7 @@ func GetOpts() SbiOptions {
 	flag.BoolVar(&opts.NoWritePlottables, "w", false, "Do not write to plottable files (they already exist)")
 	flag.BoolVar(&opts.NoPlot, "p", false, "Do not plot plottables")
 	flag.BoolVar(&opts.PlotBeneficial, "b", false, "Plot beneficial alleles, not minor alleles")
+	flag.BoolVar(&opts.PlotBeneficialG36, "B", false, "Plot beneficial alleles based on generation 36 pFST comparisons, not minor alleles")
 	flag.BoolVar(&opts.PlotUgly, "u", false, "Plot ugly-style, i.e. lots of extra lines")
 	flag.IntVar(&opts.Threads, "t", 1, "Threads to use")
 	flag.Parse()
@@ -31,6 +32,10 @@ type PlotCfg struct {
 	ToUse InfoSelection
 	BeneficialSbi SyncBedInfo
 	BeneficialToUse InfoSelection
+	BeneficialExpSbi SyncBedInfo
+	BeneficialExpToUse InfoSelection
+	BeneficialControlSbi SyncBedInfo
+	BeneficialControlToUse InfoSelection
 }
 
 type MultiPlotCfg struct {
@@ -88,28 +93,63 @@ func ToPlottableSubset(sync []SyncE, info []InfoE, toUse InfoSelection) [][]stri
 	return ToPlottable(newsync, newinfo)
 }
 
-func ToPlottableBeneficialSubset(sync []SyncE, info []InfoE, toUse InfoSelection) [][]string {
+func ToPlottableBeneficialSubset(sync []SyncE, info []InfoE, beneSync []SyncE, beneInfo []InfoE, toUse InfoSelection) [][]string {
 	cols := GoodCols(info, toUse)
 	newsync := SubsetSyncByCols(sync, cols)
 	newinfo := SubsetInfoByCols(info, cols)
-	SetBeneficials(newsync, info)
+
+	beneCols := GoodCols(beneInfo, toUse)
+	newBeneSync := SubsetSyncByCols(beneSync, beneCols)
+	newBeneInfo := SubsetInfoByCols(beneInfo, beneCols)
+
+	SetBeneficials(newsync, newinfo, newBeneSync, newBeneInfo)
 	return ToPlottablePlotcol(newsync, newinfo)
 }
 
+func ToPlottableBeneficialG36Subset(sync []SyncE, info []InfoE, beneExpSync []SyncE, beneExpInfo []InfoE, beneControlSync []SyncE, beneControlInfo []InfoE, toUse InfoSelection) [][]string {
+	cols := GoodCols(info, toUse)
+
+	newsync := SubsetSyncByCols(sync, cols)
+	newinfo := SubsetInfoByCols(info, cols)
+
+	beneExpCols := GoodCols(beneExpInfo, toUse)
+	newBeneExpSync := SubsetSyncByCols(beneExpSync, beneExpCols)
+	newBeneExpInfo := SubsetInfoByCols(beneExpInfo, beneExpCols)
+
+	beneControlCols := GoodCols(beneControlInfo, toUse)
+	newBeneControlSync := SubsetSyncByCols(beneControlSync, beneControlCols)
+	newBeneControlInfo := SubsetInfoByCols(beneControlInfo, beneControlCols)
+
+	SetBeneficialsHigh36(newsync, newinfo, newBeneExpSync, newBeneExpInfo, newBeneControlSync, newBeneControlInfo)
+	return ToPlottablePlotcol(newsync, newinfo)
+}
 
 func ProcessMultiPlotCfg(cfg MultiPlotCfg, o SbiOptions) error {
 	var plottable [][]string
 	plottablepath := cfg.Outpre + plottablesuffix
 
 	if !o.NoWritePlottables {
-		fmt.Fprintln(os.Stderr, "o.NoWritePlottables is false")
 		for _, pcfg := range cfg.Cfgs {
 			sync, _, info, err := ReadSBI(pcfg.Sbi)
 			if err != nil {
 				return err
 			}
 			if o.PlotBeneficial {
-				plottable = append(plottable, ToPlottableBeneficialSubset(sync, info, pcfg.ToUse)...)
+				benesync, _, beneinfo, err := ReadSBI(pcfg.BeneficialSbi)
+				if err != nil {
+					return err
+				}
+				plottable = append(plottable, ToPlottableBeneficialSubset(sync, info, benesync, beneinfo, pcfg.ToUse)...)
+			} else if o.PlotBeneficialG36 {
+				expsync, _, expinfo, err := ReadSBI(pcfg.BeneficialExpSbi)
+				if err != nil {
+					return err
+				}
+				controlsync, _, controlinfo, err := ReadSBI(pcfg.BeneficialControlSbi)
+				if err != nil {
+					return err
+				}
+				plottable = append(plottable, ToPlottableBeneficialG36Subset(sync, info, expsync, expinfo, controlsync, controlinfo, pcfg.ToUse)...)
 			} else {
 				plottable = append(plottable, ToPlottableSubset(sync, info, pcfg.ToUse)...)
 			}

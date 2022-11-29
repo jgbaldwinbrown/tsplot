@@ -76,11 +76,14 @@ func OutprefixString(breed, bit string) string {
 	return fmt.Sprintf("%v_%v_separated", breed, bit)
 }
 
-func BuildCfg(breed, bit string, reps []int, beneficial, ugly bool) MultiPlotCfg {
+func BuildCfg(breed, bit string, reps []int, beneficial, beneficial36, ugly bool) MultiPlotCfg {
 	var m MultiPlotCfg
 	m.Outpre = fmt.Sprintf("%v_pfst_%v_peaks_%v_%v_multiplot", breed, breed, bit, "all4reps")
 	if beneficial {
 		m.Outpre = m.Outpre + "_beneficial"
+	}
+	if beneficial36 {
+		m.Outpre = m.Outpre + "_beneficial36"
 	}
 	if ugly {
 		m.Outpre = m.Outpre + "_ugly"
@@ -95,6 +98,7 @@ func BuildCfg(breed, bit string, reps []int, beneficial, ugly bool) MultiPlotCfg
 				Category: "",
 			},
 			ToUse: InfoSelection{[]string{fmt.Sprintf("%d", rep)}},
+
 			BeneficialSbi: SyncBedInfo {
 				Sync: SyncString(breed, "unbitted"),
 				Bed: BedString(breed, "unbitted", rep),
@@ -103,17 +107,38 @@ func BuildCfg(breed, bit string, reps []int, beneficial, ugly bool) MultiPlotCfg
 				Category: "",
 			},
 			BeneficialToUse: InfoSelection{[]string{fmt.Sprintf("%d", rep)}},
+
+			BeneficialExpSbi: SyncBedInfo {
+				Sync: SyncString(breed, "unbitted"),
+				Bed: BedString(breed, "unbitted", rep),
+				Info: InfoString(breed, "unbitted"),
+				Out: "",
+				Category: "",
+			},
+			BeneficialExpToUse: InfoSelection{[]string{fmt.Sprintf("%d", rep)}},
+
+			BeneficialControlSbi: SyncBedInfo {
+				Sync: SyncString("feral", "unbitted"),
+				Bed: BedString(breed, "unbitted", rep),
+				Info: InfoString("feral", "unbitted"),
+				Out: "",
+				Category: "",
+			},
+			BeneficialControlToUse: InfoSelection{[]string{fmt.Sprintf("%d", rep)}},
 		}
 		m.Cfgs = append(m.Cfgs, cfg)
 	}
 	return m
 }
 
-func BuildControl(breed, bit string, reps []int, beneficial, ugly bool) MultiPlotCfg {
+func BuildControl(breed, bit string, reps []int, beneficial, beneficial36, ugly bool) MultiPlotCfg {
 	var m MultiPlotCfg
 	m.Outpre = fmt.Sprintf("%v_pfst_%v_peaks_%v_%v_multiplot", "feral", breed, bit, "all4reps")
 	if beneficial {
 		m.Outpre = m.Outpre + "_beneficial"
+	}
+	if beneficial36 {
+		m.Outpre = m.Outpre + "_beneficial36"
 	}
 	if ugly {
 		m.Outpre = m.Outpre + "_ugly"
@@ -142,15 +167,16 @@ func BuildControl(breed, bit string, reps []int, beneficial, ugly bool) MultiPlo
 	return m
 }
 
-func BuildCfgAndControl(breed, bit string, reps []int, beneficial, ugly bool) []MultiPlotCfg {
+func BuildCfgAndControl(breed, bit string, reps []int, beneficial, beneficial36, ugly bool) []MultiPlotCfg {
 	return []MultiPlotCfg {
-		BuildCfg(breed, bit, reps, beneficial, ugly),
-		BuildControl(breed, bit, reps, beneficial, ugly),
+		BuildCfg(breed, bit, reps, beneficial, beneficial36, ugly),
+		BuildControl(breed, bit, reps, beneficial, beneficial36, ugly),
 	}
 }
 
 func MakeCfg() {
 	beneficialp := flag.Bool("b", false, "Plot beneficial alleles")
+	beneficial36p := flag.Bool("B", false, "Plot beneficial alleles based on generation 36 pFST comparisons")
 	uglyp := flag.Bool("u", false, "Make an ugly (lots of unnecessary lines) plot")
 	flag.Parse()
 
@@ -161,7 +187,7 @@ func MakeCfg() {
 
 	for _, breed := range breeds {
 		for _, bit := range bits {
-			cfgs = append(cfgs, BuildCfgAndControl(breed, bit, reps, *beneficialp, *uglyp)...)
+			cfgs = append(cfgs, BuildCfgAndControl(breed, bit, reps, *beneficialp, *beneficial36p, *uglyp)...)
 		}
 	}
 

@@ -20,6 +20,7 @@ type SbiOptions struct {
 	NoPlot bool
 	Threads int
 	PlotBeneficial bool
+	PlotBeneficialG36 bool
 	PlotUgly bool
 }
 
