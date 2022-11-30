@@ -1,6 +1,7 @@
 package tsplot
 
 import (
+	"math/rand"
 	"flag"
 	"io"
 	"os"
@@ -17,6 +18,8 @@ func GetOpts() SbiOptions {
 	flag.BoolVar(&opts.PlotBeneficial, "b", false, "Plot beneficial alleles, not minor alleles")
 	flag.BoolVar(&opts.PlotBeneficialG36, "B", false, "Plot beneficial alleles based on generation 36 pFST comparisons, not minor alleles")
 	flag.BoolVar(&opts.PlotUgly, "u", false, "Plot ugly-style, i.e. lots of extra lines")
+	flag.BoolVar(&opts.PlotInPopUnselected, "P", false, "Plot randomly-chosen unselected sites")
+	flag.IntVar(&opts.Seed, "s", 0, "Random seed")
 	flag.IntVar(&opts.Threads, "t", 1, "Threads to use")
 	flag.Parse()
 
@@ -124,9 +127,54 @@ func ToPlottableBeneficialG36Subset(sync []SyncE, info []InfoE, beneExpSync []Sy
 	return ToPlottablePlotcol(newsync, newinfo)
 }
 
+func ReadSyncInfo(syncpath string, infopath string, bed []BedE) ([]SyncE, []InfoE, error) {
+	sync, err := ReadSync(syncpath, bed)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	info, err := ReadInfo(infopath)
+	if err != nil {
+		return nil, nil, err
+	}
+	return sync, info, nil
+}
+
+func GetInPopUnselectedPlottable(selectedPlottable [][]string, cfg MultiPlotCfg, seed int64) ([][]string, error) { //in progress
+
+	var plottable [][]string
+	for _, pcfg := range cfg.Cfgs {
+		nsites := CountSites(plottable, pcfg.ToUse)
+		r := rand.New(rand.NewSource(seed))
+		sitessync, err := ChooseSitesFull(nsites, cfg, r)
+		if err != nil {
+			return nil, err
+		}
+		sitesbed := SyncToBed(sitessync)
+
+		sync, info, err := ReadSyncInfo(pcfg.Sbi.Sync, pcfg.Sbi.Info, sitesbed)
+		if err != nil {
+			return nil, err
+		}
+
+		expsync, expinfo, err := ReadSyncInfo(pcfg.BeneficialExpSbi.Sync, pcfg.BeneficialExpSbi.Info, sitesbed)
+		if err != nil {
+			return nil, err
+		}
+
+		controlsync, controlinfo, err := ReadSyncInfo(pcfg.BeneficialControlSbi.Sync, pcfg.BeneficialControlSbi.Info, sitesbed)
+		if err != nil {
+			return nil, err
+		}
+		plottable = append(plottable, ToPlottableBeneficialG36Subset(sync, info, expsync, expinfo, controlsync, controlinfo, pcfg.ToUse)...)
+	}
+	return plottable, nil
+}
+
 func ProcessMultiPlotCfg(cfg MultiPlotCfg, o SbiOptions) error {
 	var plottable [][]string
 	plottablepath := cfg.Outpre + plottablesuffix
+	unselplottablepath := cfg.Outpre + "_unsel" + plottablesuffix
 
 	if !o.NoWritePlottables {
 		for _, pcfg := range cfg.Cfgs {
@@ -140,7 +188,7 @@ func ProcessMultiPlotCfg(cfg MultiPlotCfg, o SbiOptions) error {
 					return err
 				}
 				plottable = append(plottable, ToPlottableBeneficialSubset(sync, info, benesync, beneinfo, pcfg.ToUse)...)
-			} else if o.PlotBeneficialG36 {
+			} else if o.PlotBeneficialG36 || o.PlotInPopUnselected {
 				expsync, _, expinfo, err := ReadSBI(pcfg.BeneficialExpSbi)
 				if err != nil {
 					return err
@@ -155,18 +203,33 @@ func ProcessMultiPlotCfg(cfg MultiPlotCfg, o SbiOptions) error {
 			}
 		}
 
-
 		err := WritePlottableToFile(plottable, cfg.Outpre)
 		if err != nil {
 			return err
 		}
+
+		if o.PlotInPopUnselected {
+			unselPlottable, err := GetInPopUnselectedPlottable(plottable, cfg, int64(o.Seed))
+			if err != nil {
+				return err
+			}
+			err = WritePlottableToFile(unselPlottable, cfg.Outpre + "_unsel")
+		}
 	}
 
 	plotpath := cfg.Outpre + plottedsuffix
+	unselplotpath := cfg.Outpre + "_unsel" + plottedsuffix
 	if !o.NoPlot {
 		err := PlotPlottableFileTip(plottablepath, plotpath, o.PlotUgly)
 		if err != nil {
 			return err
+		}
+
+		if o.PlotInPopUnselected {
+			err := PlotPlottableFileTip(unselplottablepath, unselplotpath, o.PlotUgly)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -217,4 +280,12 @@ func RunMultiPlotCfgs() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func SyncToBed(in []SyncE) []BedE {
+	var bs []BedE
+	for _, s := range in {
+		bs = append(bs, BedE{Chr: s.Chr, Start: s.Pos, End: s.Pos+1})
+	}
+	return bs
 }

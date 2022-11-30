@@ -22,6 +22,8 @@ type SbiOptions struct {
 	PlotBeneficial bool
 	PlotBeneficialG36 bool
 	PlotUgly bool
+	PlotInPopUnselected bool
+	Seed int
 }
 
 func ReadSyncBedInfo(r io.Reader) ([]SyncBedInfo, error) {

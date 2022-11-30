@@ -220,6 +220,10 @@ func InBed(chr string, pos int64, bed []BedE) bool {
 }
 
 func ReadSync(path string, bed []BedE) ([]SyncE, error) {
+	return ReadSyncCore(path, bed, false)
+}
+
+func ReadSyncCore(path string, bed []BedE, inverseBed bool) ([]SyncE, error) {
 	conn, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -253,7 +257,13 @@ func ReadSync(path string, bed []BedE) ([]SyncE, error) {
 		if err != nil {
 			return nil, err
 		}
-		if InBed(chr, pos, bed) {
+		goodpos := InBed
+		if inverseBed {
+			goodpos = func(chr string, pos int64, bed []BedE) bool {
+				return !InBed(chr, pos, bed)
+			}
+		}
+		if goodpos(chr, pos, bed) {
 			sy, err := ParseSyncE(line)
 			if err != nil {
 				return nil, err
