@@ -8,6 +8,7 @@ set -e
 	go build multi_max_slope_categories.go
 	go build multi_max_together.go
 	go build make_multiplot_cfg.go
+	go build slope_diffs.go
 ))
 
 cp cmd/ts ~/mybin/ts
@@ -19,3 +20,4 @@ cp r/plotafstip_ugly.R ~/mybin/plotafstip_ugly
 cp cmd/multi_max_slope_categories ~/mybin
 cp cmd/multi_max_together ~/mybin
 cp cmd/make_multiplot_cfg ~/mybin
+cp cmd/slope_diffs ~/mybin

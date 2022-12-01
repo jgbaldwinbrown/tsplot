@@ -39,6 +39,8 @@ type PlotCfg struct {
 	BeneficialExpToUse InfoSelection
 	BeneficialControlSbi SyncBedInfo
 	BeneficialControlToUse InfoSelection
+	SlopeControlSbi SyncBedInfo
+	SlopeControlToUse InfoSelection
 }
 
 type MultiPlotCfg struct {

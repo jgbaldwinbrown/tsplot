@@ -125,6 +125,15 @@ func BuildCfg(breed, bit string, reps []int, beneficial, beneficial36, ugly bool
 				Category: "",
 			},
 			BeneficialControlToUse: InfoSelection{[]string{fmt.Sprintf("%d", rep)}},
+
+			SlopeControlSbi: SyncBedInfo {
+				Sync: SyncString("feral", bit),
+				Bed: BedString(breed, "unbitted", rep),
+				Info: InfoString("feral", bit),
+				Out: "",
+				Category: "",
+			},
+			SlopeControlToUse: InfoSelection{[]string{fmt.Sprintf("%d", rep)}},
 		}
 		m.Cfgs = append(m.Cfgs, cfg)
 	}
@@ -161,6 +170,33 @@ func BuildControl(breed, bit string, reps []int, beneficial, beneficial36, ugly 
 				Category: "",
 			},
 			BeneficialToUse: InfoSelection{[]string{fmt.Sprintf("%d", rep)}},
+
+			BeneficialExpSbi: SyncBedInfo {
+				Sync: SyncString(breed, "unbitted"),
+				Bed: BedString(breed, "unbitted", rep),
+				Info: InfoString(breed, "unbitted"),
+				Out: "",
+				Category: "",
+			},
+			BeneficialExpToUse: InfoSelection{[]string{fmt.Sprintf("%d", rep)}},
+
+			BeneficialControlSbi: SyncBedInfo {
+				Sync: SyncString("feral", "unbitted"),
+				Bed: BedString(breed, "unbitted", rep),
+				Info: InfoString("feral", "unbitted"),
+				Out: "",
+				Category: "",
+			},
+			BeneficialControlToUse: InfoSelection{[]string{fmt.Sprintf("%d", rep)}},
+
+			SlopeControlSbi: SyncBedInfo {
+				Sync: SyncString("feral", bit),
+				Bed: BedString(breed, "unbitted", rep),
+				Info: InfoString("feral", bit),
+				Out: "",
+				Category: "",
+			},
+			SlopeControlToUse: InfoSelection{[]string{fmt.Sprintf("%d", rep)}},
 		}
 		m.Cfgs = append(m.Cfgs, cfg)
 	}
