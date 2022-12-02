@@ -146,13 +146,16 @@ func GetInPopUnselectedPlottable(selectedPlottable [][]string, cfg MultiPlotCfg,
 
 	var plottable [][]string
 	for _, pcfg := range cfg.Cfgs {
-		nsites := CountSites(plottable, pcfg.ToUse)
+		nsites := CountSites(selectedPlottable, pcfg.ToUse)
+		fmt.Printf("nsites: %v\n", nsites)
 		r := rand.New(rand.NewSource(seed))
 		sitessync, err := ChooseSitesFull(nsites, cfg, r)
+		fmt.Printf("len(sitessync): %v\n", len(sitessync))
 		if err != nil {
 			return nil, err
 		}
 		sitesbed := SyncToBed(sitessync)
+		fmt.Printf("len(sitesbed): %v\n", len(sitesbed))
 
 		sync, info, err := ReadSyncInfo(pcfg.Sbi.Sync, pcfg.Sbi.Info, sitesbed)
 		if err != nil {
@@ -184,13 +187,8 @@ func ProcessMultiPlotCfg(cfg MultiPlotCfg, o SbiOptions) error {
 			if err != nil {
 				return err
 			}
-			if o.PlotBeneficial {
-				benesync, _, beneinfo, err := ReadSBI(pcfg.BeneficialSbi)
-				if err != nil {
-					return err
-				}
-				plottable = append(plottable, ToPlottableBeneficialSubset(sync, info, benesync, beneinfo, pcfg.ToUse)...)
-			} else if o.PlotBeneficialG36 || o.PlotInPopUnselected {
+
+			if o.PlotBeneficialG36 || o.PlotInPopUnselected {
 				expsync, _, expinfo, err := ReadSBI(pcfg.BeneficialExpSbi)
 				if err != nil {
 					return err
@@ -200,6 +198,12 @@ func ProcessMultiPlotCfg(cfg MultiPlotCfg, o SbiOptions) error {
 					return err
 				}
 				plottable = append(plottable, ToPlottableBeneficialG36Subset(sync, info, expsync, expinfo, controlsync, controlinfo, pcfg.ToUse)...)
+			} else if o.PlotBeneficial {
+				benesync, _, beneinfo, err := ReadSBI(pcfg.BeneficialSbi)
+				if err != nil {
+					return err
+				}
+				plottable = append(plottable, ToPlottableBeneficialSubset(sync, info, benesync, beneinfo, pcfg.ToUse)...)
 			} else {
 				plottable = append(plottable, ToPlottableSubset(sync, info, pcfg.ToUse)...)
 			}

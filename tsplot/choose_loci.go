@@ -72,13 +72,16 @@ func ChooseSitesOld(count int, sites []SyncE, avoid []BedE, r *rand.Rand) ([]Bed
 func ChooseSites(count int, sites []SyncE, r *rand.Rand) ([]SyncE, error) {
 	rsites := slices.Clone(sites)
 	r.Shuffle(len(rsites), func(i, j int) {rsites[i], rsites[j] = rsites[j], rsites[i]})
+	if len(rsites) < count {
+		return nil, fmt.Errorf("ChooseSites: rsites %v has len %v shorter than count %v", rsites, len(rsites), count)
+	}
 	return rsites[:count], nil
 }
 
 func ChooseSitesFull(count int, mcfg MultiPlotCfg, r *rand.Rand) ([]SyncE, error) {
 	var fullsync []SyncE
 	for _, pcfg := range mcfg.Cfgs {
-		expsync, _, _, err := ReadSBIInverse(pcfg.BeneficialExpSbi)
+		expsync, _, _, err := ReadSBIInverse(pcfg.BeneficialExpSbi, true)
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +99,7 @@ func CountSites(plottable [][]string, toUse InfoSelection) int {
 	for _, line := range plottable {
 		for _, rep := range toUse.Reps {
 			if line[8] == rep {
-				counter[line[2]] = struct{}{}
+				counter[line[9]] = struct{}{}
 			}
 		}
 	}

@@ -192,21 +192,31 @@ func ParseSyncCol(col string) ([]int64, error) {
 }
 
 func ParseSyncE(line []string) (SyncE, error) {
+	return ParseSyncECore(line, false)
+}
+
+func ParseSyncEMinimal(line []string) (SyncE, error) {
+	return ParseSyncECore(line, true)
+}
+
+func ParseSyncECore(line []string, minimal bool) (SyncE, error) {
 	var err error
 	s := SyncE{}
 	s.Chr, s.Pos, err = ParseSyncChrPos(line)
 	if err != nil {
 		return s, err
 	}
-	for _, col := range line[3:] {
-		af, err := ParseSyncCol(col)
-		if err != nil {
-			return s, err
+	if !minimal {
+		for _, col := range line[3:] {
+			af, err := ParseSyncCol(col)
+			if err != nil {
+				return s, err
+			}
+			s.Afs = append(s.Afs, af)
 		}
-		s.Afs = append(s.Afs, af)
+		s.Line = make([]string, len(line))
+		copy(s.Line, line)
 	}
-	s.Line = make([]string, len(line))
-	copy(s.Line, line)
 	return s, nil
 }
 
@@ -220,10 +230,10 @@ func InBed(chr string, pos int64, bed []BedE) bool {
 }
 
 func ReadSync(path string, bed []BedE) ([]SyncE, error) {
-	return ReadSyncCore(path, bed, false)
+	return ReadSyncCore(path, bed, false, false)
 }
 
-func ReadSyncCore(path string, bed []BedE, inverseBed bool) ([]SyncE, error) {
+func ReadSyncCore(path string, bed []BedE, inverseBed bool, minimal bool) ([]SyncE, error) {
 	conn, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -251,20 +261,27 @@ func ReadSyncCore(path string, bed []BedE, inverseBed bool) ([]SyncE, error) {
 	scanf := lscan.ByByte('\t')
 	out := []SyncE{}
 	line := []string{}
+
+	goodpos := InBed
+	if inverseBed {
+		goodpos = func(chr string, pos int64, bed []BedE) bool {
+			return !InBed(chr, pos, bed)
+		}
+	}
+
+	parse := ParseSyncE
+	if minimal {
+		parse = ParseSyncEMinimal
+	}
+
 	for s.Scan() {
 		line = lscan.SplitByFunc(line, s.Text(), scanf)
 		chr, pos, err := ParseSyncChrPos(line)
 		if err != nil {
 			return nil, err
 		}
-		goodpos := InBed
-		if inverseBed {
-			goodpos = func(chr string, pos int64, bed []BedE) bool {
-				return !InBed(chr, pos, bed)
-			}
-		}
 		if goodpos(chr, pos, bed) {
-			sy, err := ParseSyncE(line)
+			sy, err := parse(line)
 			if err != nil {
 				return nil, err
 			}

@@ -37,13 +37,13 @@ func RunPeakmax() {
 }
 */
 
-func ReadSBIInverse(sbi SyncBedInfo) ([]SyncE, []BedE, []InfoE, error) {
+func ReadSBIInverse(sbi SyncBedInfo, minimal bool) ([]SyncE, []BedE, []InfoE, error) {
 	bed, err := ReadBed(sbi.Bed)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	sync, err := ReadSyncCore(sbi.Sync, bed, true)
+	sync, err := ReadSyncCore(sbi.Sync, bed, true, minimal)
 	if err != nil {
 		return nil, nil, nil, err
 	}
