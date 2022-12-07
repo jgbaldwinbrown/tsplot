@@ -148,9 +148,11 @@ func GetInPopUnselectedPlottable(selectedPlottable [][]string, cfg MultiPlotCfg,
 	for _, pcfg := range cfg.Cfgs {
 		nsites := CountSites(selectedPlottable, pcfg.ToUse)
 		fmt.Printf("nsites: %v\n", nsites)
+
 		r := rand.New(rand.NewSource(seed))
-		sitessync, err := ChooseSitesFull(nsites, cfg, r)
+		sitessync, err := ChooseSitesFull(nsites, pcfg, r)
 		fmt.Printf("len(sitessync): %v\n", len(sitessync))
+
 		if err != nil {
 			return nil, err
 		}

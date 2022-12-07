@@ -78,19 +78,20 @@ func ChooseSites(count int, sites []SyncE, r *rand.Rand) ([]SyncE, error) {
 	return rsites[:count], nil
 }
 
-func ChooseSitesFull(count int, mcfg MultiPlotCfg, r *rand.Rand) ([]SyncE, error) {
+func ChooseSitesFull(count int, pcfg PlotCfg, r *rand.Rand) ([]SyncE, error) {
+	return ChooseSitesFullGeneric(count, pcfg.BeneficialExpSbi, r)
+}
+func ChooseSitesFullGeneric(count int, expSbi SyncBedInfo, r *rand.Rand) ([]SyncE, error) {
 	var fullsync []SyncE
-	for _, pcfg := range mcfg.Cfgs {
-		expsync, _, _, err := ReadSBIInverse(pcfg.BeneficialExpSbi, true)
-		if err != nil {
-			return nil, err
-		}
-		sites, err := ChooseSites(count, expsync, r)
-		if err != nil {
-			return nil, err
-		}
-		fullsync = append(fullsync, sites...)
+	expsync, _, _, err := ReadSBIInverse(expSbi, true)
+	if err != nil {
+		return nil, err
 	}
+	sites, err := ChooseSites(count, expsync, r)
+	if err != nil {
+		return nil, err
+	}
+	fullsync = append(fullsync, sites...)
 	return fullsync, nil
 }
 
