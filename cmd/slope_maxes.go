@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"bufio"
-	"github.com/jgbaldwinbrown/tsplot/tsplot"
+	"github.com/jgbaldwinbrown/tsplot/pkg/tsplot"
 )
 
 func main() {

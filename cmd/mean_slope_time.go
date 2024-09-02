@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"github.com/jgbaldwinbrown/tsplot/tsplot"
+	"github.com/jgbaldwinbrown/tsplot/pkg/tsplot"
 	"github.com/jgbaldwinbrown/accel/accel"
 )
 

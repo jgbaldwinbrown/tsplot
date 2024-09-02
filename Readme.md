@@ -18,4 +18,10 @@ and it will be available as "tsplot".
 
 ## Installation
 
-To install the command line tools, 
+To install the command line tools, run the install script as follows:
+
+```sh
+./install.sh /path/to/my/bin/dir/
+```
+
+## Executables

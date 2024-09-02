@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	tsplot.RunMultiSlopePlotCfgs()
+	tsplot.RunPlotSfs()
 }

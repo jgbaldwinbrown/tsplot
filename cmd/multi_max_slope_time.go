@@ -2,7 +2,7 @@ package main
 
 import (
 	"os"
-	"github.com/jgbaldwinbrown/tsplot/tsplot"
+	"github.com/jgbaldwinbrown/tsplot/pkg/tsplot"
 )
 
 func main() {
