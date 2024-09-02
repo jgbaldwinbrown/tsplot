@@ -10,10 +10,9 @@ main = function() {
 	p = ggplot(data = data, aes(Treatment, Slope)) +
 		geom_boxplot() +
 		labs(title = "Allele frequency slopes of related treatments", x = "Treatment", y = "Allele frequency Slope") +
-		theme_bw() +
-		theme(axis.text.x = element_text(angle = 45, hjust = 1))
+		theme_bw()
 
-	pdf(args[2], height = 3*1.5, width = 4*1.5)
+	pdf(args[2], height = 3, width = 4)
 		print(p)
 	dev.off()
 }

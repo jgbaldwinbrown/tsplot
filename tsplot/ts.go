@@ -475,9 +475,9 @@ func PlotPlottableFile(inpath, outpath string) error {
 }
 
 func PlotPlottableFileTip(inpath, outpath string, ugly bool) error {
-	cmd := exec.Command("plotafstip", inpath, outpath)
+	cmd := exec.Command("plotafstipfinal", inpath, outpath)
 	if ugly {
-		cmd = exec.Command("plotafstip_ugly", inpath, outpath)
+		cmd = exec.Command("plotafstip", inpath, outpath)
 	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

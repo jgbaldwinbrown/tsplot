@@ -60,7 +60,7 @@ func TestCountSites(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	count := CountSites(in)
+	count := CountSites(in, InfoSelection{Reps: []string{"1", "3"}})
 	fmt.Println(count)
 }
 

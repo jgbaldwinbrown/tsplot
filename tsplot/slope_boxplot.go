@@ -11,8 +11,6 @@ import (
 	"fmt"
 )
 
-const slopecalcsuffix = "_slopecalc"
-const slopecalcplotsuffix = "_slopecalc_plotted"
 
 func CalcSlope(sync SyncE, info []InfoE) float64 {
 	maxgen := 49.0
@@ -55,6 +53,26 @@ func ToSlopePlottable(name string, sync []SyncE, info []InfoE, expsync []SyncE, 
 	return PlottableSlopes(name, CalcSlopes(newsync, newinfo))
 }
 
+func ToSlopePlottableAndFixationCounts(name string, sync []SyncE, info []InfoE, expsync []SyncE, expinfo []InfoE, controlsync []SyncE, controlinfo []InfoE, toUse InfoSelection) ([][]string, []FixationCount) {
+	cols := GoodCols(info, toUse)
+
+	newsync := SubsetSyncByCols(sync, cols)
+	newinfo := SubsetInfoByCols(info, cols)
+
+	expCols := GoodCols(expinfo, toUse)
+	newExpSync := SubsetSyncByCols(expsync, expCols)
+	newExpInfo := SubsetInfoByCols(expinfo, expCols)
+
+	controlCols := GoodCols(controlinfo, toUse)
+	newControlSync := SubsetSyncByCols(controlsync, controlCols)
+	newControlInfo := SubsetInfoByCols(controlinfo, controlCols)
+
+	SetBeneficialsHigh36(newsync, newinfo, newExpSync, newExpInfo, newControlSync, newControlInfo)
+	slopes := PlottableSlopes(name, CalcSlopes(newsync, newinfo))
+	counts := ToFixationCounts(name, newsync, newinfo)
+	return slopes, counts
+}
+
 func GetPcfgSlopePlottables(pcfg SlopePlotCfg) (slopePlottable [][]string, err error) {
 	expsync, _, expinfo, err := ReadSBI(pcfg.PolarizerExpSbi)
 	if err != nil {
@@ -74,6 +92,29 @@ func GetPcfgSlopePlottables(pcfg SlopePlotCfg) (slopePlottable [][]string, err e
 		slopePlottable = append(slopePlottable, ToSlopePlottable(sbi.Category, sync, info, expsync, expinfo, controlsync, controlinfo, pcfg.ToUses[i])...)
 	}
 	return slopePlottable, nil
+}
+
+func GetPcfgSlopePlottablesAndFixationCounts(pcfg SlopePlotCfg) (slopePlottable [][]string, fixationCounts []FixationCount, err error) {
+	expsync, _, expinfo, err := ReadSBI(pcfg.PolarizerExpSbi)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	controlsync, _, controlinfo, err := ReadSBI(pcfg.PolarizerControlSbi)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for i, sbi := range pcfg.Sbis {
+		sync, _, info, err := ReadSBI(sbi)
+		if err != nil {
+			return nil, nil, err
+		}
+		oneSlopePlottable, oneCount := ToSlopePlottableAndFixationCounts(sbi.Category, sync, info, expsync, expinfo, controlsync, controlinfo, pcfg.ToUses[i])
+		slopePlottable = append(slopePlottable, oneSlopePlottable...)
+		fixationCounts = append(fixationCounts, oneCount...)
+	}
+	return slopePlottable, fixationCounts, nil
 }
 
 func GetPcfgPlottables(pcfg SlopePlotCfg) (plottable [][]string, err error) {
@@ -113,6 +154,25 @@ func GetAllPcfgPlottables(cfg MultiSlopePlotCfg) (slopePlottable [][]string, plo
 	return slopePlottable, plottable, nil
 }
 
+func GetAllPcfgPlottablesAndFixationCounts(cfg MultiSlopePlotCfg) (slopePlottable [][]string, plottable [][]string, fixCounts []FixationCount, err error) {
+	for _, pcfg := range cfg.Cfgs {
+		onePlottable, err := GetPcfgPlottables(pcfg)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		oneSlopePlottable, oneFixCount, err := GetPcfgSlopePlottablesAndFixationCounts(pcfg)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		slopePlottable = append(slopePlottable, oneSlopePlottable...)
+		plottable = append(plottable, onePlottable...)
+		fixCounts = append(fixCounts, oneFixCount...)
+	}
+
+	return slopePlottable, plottable, fixCounts, nil
+}
+
 func GetInverseSitesBed(selectedPlottable [][]string, pcfg SlopePlotCfg, seed int64) ([]BedE, error) {
 	nsites := CountSites(selectedPlottable, pcfg.ToUses[0])
 
@@ -126,7 +186,10 @@ func GetInverseSitesBed(selectedPlottable [][]string, pcfg SlopePlotCfg, seed in
 	return sitesbed, nil
 }
 
+const unselsuffix = "_unsel"
+
 func GetInPopUnselSlopePlottable(selectedPlottable [][]string, cfg MultiSlopePlotCfg, seed int64) ([][]string, error) {
+
 	var plottable [][]string
 	for _, pcfg := range cfg.Cfgs {
 		sitesbed, err := GetInverseSitesBed(selectedPlottable, pcfg, seed);
@@ -147,10 +210,41 @@ func GetInPopUnselSlopePlottable(selectedPlottable [][]string, cfg MultiSlopePlo
 				return nil, err
 			}
 
-			plottable = append(plottable, ToSlopePlottable(sbi.Category, sync, info, expsync, expinfo, controlsync, controlinfo, pcfg.ToUses[i])...)
+			plottable = append(plottable, ToSlopePlottable(sbi.Category + unselsuffix, sync, info, expsync, expinfo, controlsync, controlinfo, pcfg.ToUses[i])...)
 		}
 	}
 	return plottable, nil
+}
+
+func GetInPopUnselSlopePlottableAndFixationCounts(selectedPlottable [][]string, cfg MultiSlopePlotCfg, seed int64) ([][]string, []FixationCount, error) {
+
+	var plottable [][]string
+	var counts []FixationCount
+	for _, pcfg := range cfg.Cfgs {
+		sitesbed, err := GetInverseSitesBed(selectedPlottable, pcfg, seed);
+
+		expsync, expinfo, err := ReadSyncInfo(pcfg.PolarizerExpSbi.Sync, pcfg.PolarizerExpSbi.Info, sitesbed)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		controlsync, controlinfo, err := ReadSyncInfo(pcfg.PolarizerControlSbi.Sync, pcfg.PolarizerControlSbi.Info, sitesbed)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		for i, sbi := range pcfg.Sbis {
+			sync, info, err := ReadSyncInfo(sbi.Sync, sbi.Info, sitesbed)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			onePlottable, oneCount := ToSlopePlottableAndFixationCounts(sbi.Category + unselsuffix, sync, info, expsync, expinfo, controlsync, controlinfo, pcfg.ToUses[i])
+			plottable = append(plottable, onePlottable...)
+			counts = append(counts, oneCount...)
+		}
+	}
+	return plottable, counts, nil
 }
 
 
@@ -169,8 +263,24 @@ func GetSlopePlottables(cfg MultiSlopePlotCfg, seed int64) (slopePlottable [][]s
 	return slopePlottable, nil
 }
 
+func GetSlopeAndFixPlottables(cfg MultiSlopePlotCfg, seed int64) (slopePlottable [][]string, fixCounts []FixationCount, err error) {
+	slopePlottable, plottable, fixCounts, err := GetAllPcfgPlottablesAndFixationCounts(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	unselSlopePlottable, unselFixCounts, err := GetInPopUnselSlopePlottableAndFixationCounts(plottable, cfg, seed)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	slopePlottable = append(slopePlottable, unselSlopePlottable...)
+	fixCounts = append(fixCounts, unselFixCounts...)
+	return slopePlottable, fixCounts, nil
+}
+
 func WriteSlopePlottableToPath(plottable [][]string, path string) error {
-	w, err := os.Open(path)
+	w, err := os.Create(path)
 	if err != nil {
 		return err
 	}
@@ -196,9 +306,14 @@ func PlotSlopeBox(inpath, outpath string) error {
 	return err
 }
 
-func ProcessMultiPlotSlopeCalcs(cfg MultiSlopePlotCfg, o SbiOptions) error {
-	plottablepath := cfg.Outpre + slopecalcsuffix
+const slopecalcsuffix = "_slopecalc"
+const fixsuffix = "_fixations"
+const plotsuffix = "_plotted"
 
+func ProcessMultiPlotSlopeCalcsOld(cfg MultiSlopePlotCfg, o SbiOptions) error {
+
+	plottablepath := cfg.Outpre + slopecalcsuffix + ".bed"
+	plotpath := cfg.Outpre + slopecalcsuffix + plotsuffix + ".pdf"
 	if !o.NoWritePlottables {
 		slopePlottable, err := GetSlopePlottables(cfg, int64(o.Seed))
 		if err != nil {
@@ -211,7 +326,6 @@ func ProcessMultiPlotSlopeCalcs(cfg MultiSlopePlotCfg, o SbiOptions) error {
 		}
 	}
 
-	plotpath := plottablepath + slopecalcplotsuffix
 	if !o.NoPlot {
 		err := PlotSlopeBox(plottablepath, plotpath)
 		if err != nil {
@@ -222,9 +336,48 @@ func ProcessMultiPlotSlopeCalcs(cfg MultiSlopePlotCfg, o SbiOptions) error {
 	return nil
 }
 
+func ProcessMultiPlotSlopeAndFixCalcs(cfg MultiSlopePlotCfg, o SbiOptions) error {
+	plottablepath := cfg.Outpre + slopecalcsuffix + ".bed"
+	plotpath := cfg.Outpre + slopecalcsuffix + plotsuffix + ".pdf"
+	fixpath := cfg.Outpre + fixsuffix + ".bed"
+	fixplotpath := cfg.Outpre + fixsuffix + plotsuffix + ".bed"
+
+
+	if !o.NoWritePlottables {
+		slopePlottable, fixcounts, err := GetSlopeAndFixPlottables(cfg, int64(o.Seed))
+		if err != nil {
+			return err
+		}
+
+		err = WriteSlopePlottableToPath(slopePlottable, plottablepath)
+		if err != nil {
+			return err
+		}
+
+		err = WriteFixationCounts(fixcounts, fixpath)
+		if err != nil {
+			return err
+		}
+	}
+
+	if !o.NoPlot {
+		err := PlotSlopeBox(plottablepath, plotpath + ".pdf")
+		if err != nil {
+			return err
+		}
+
+		err = PlotFixCurve(fixpath, fixplotpath + ".pdf")
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func ProcessMultiSlopePlotCfgs(cfgs []MultiSlopePlotCfg, o SbiOptions) error {
 	f := func(cfg MultiSlopePlotCfg) error {
-		return ProcessMultiPlotSlopeCalcs(cfg, o)
+		return ProcessMultiPlotSlopeAndFixCalcs(cfg, o)
 	}
 
 	errs := pmap.Map(f, cfgs, o.Threads)
