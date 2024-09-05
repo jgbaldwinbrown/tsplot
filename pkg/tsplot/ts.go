@@ -15,11 +15,13 @@ import (
 	"compress/gzip"
 )
 
+// A table formatted for plotting, plus the outprefix to use when writing to file
 type Plottable struct {
 	Outprefix string
 	Plottable [][]string
 }
 
+// Make sure to defer closing the file
 func ScanPath(path string) (*bufio.Scanner, *os.File, error) {
 	r, err := os.Open(path)
 	if err != nil {
@@ -31,6 +33,7 @@ func ScanPath(path string) (*bufio.Scanner, *os.File, error) {
 	return s, r, nil
 }
 
+// Contains information about a population; should be matched to a sync file
 type InfoE struct {
 	Line []string
 	Gen int64
@@ -74,6 +77,7 @@ func ReadInfo(path string) ([]InfoE, error) {
 	return out, nil
 }
 
+// A simple bedfile / bedgraph entry (line[3] must be a float64)
 type BedE struct {
 	Chr string
 	Start int64
@@ -137,6 +141,7 @@ func ReadBedScanner(s *bufio.Scanner) ([]BedE, error) {
 	return out, nil
 }
 
+// Set the size of each span in a bedfile, but keep the centers the same
 func ResizeBed(bed []BedE, size int64) []BedE {
 	var out []BedE
 	for _, b := range bed {
@@ -154,6 +159,7 @@ func WriteBed(w io.Writer, bed []BedE) {
 	}
 }
 
+// The central sync entry format; PlotcolPrimary is the primary allele to handle; access it like this: s.Afs[3][s.PlotcolPrimary]
 type SyncE struct {
 	Chr string
 	Pos int64
@@ -416,6 +422,17 @@ func ToSeparatePlottables(sync []SyncE, bed []BedE, info []InfoE, outprefix stri
 	return out
 }
 
+// The core plottable format:
+// chr: chromosome (string)
+// pos: basepair position (int)
+// chrpos: chr and pos concatenated with a "_" (string)
+// major_c: count of the major allele (int)
+// minor_c: count of the minor allele (int)
+// major_f: frequency of major allele (float)
+// minor_f: frequency of minor allele (float)
+// gen: time point (float)
+// repl: replicate (usually an int)
+// chrposrepl: chr, pos, and repl separated by "_"
 func PlottableHeader() []string {
 	return []string{
 		"chr",

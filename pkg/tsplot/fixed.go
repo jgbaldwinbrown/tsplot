@@ -10,6 +10,7 @@ import (
 	"sort"
 )
 
+// Identify sites that are fixed, lost, or unfixed, and the generation at which that occurred
 func GetFixations(freqs Iter[float64], gens Iter[float64]) FixationTime {
 	fg := [][]float64{}
 	for freq, ok := freqs.Next(); ok ; freq, ok = freqs.Next() {
@@ -93,6 +94,7 @@ type FixationCount struct {
 	FixedOrLostFreq float64
 }
 
+// Count up fixations, losses, and total loci, only counting things with a generation less than or equal to c.Gen
 func (c *FixationCount) AddFixation(t FixationTime) {
 	c.Total++
 	if t.Gen == -1.0 || t.Gen > c.Gen {
@@ -124,6 +126,7 @@ func (c *FixationCount) CalcFreqs() {
 	c.FixedOrLostFreq = float64(c.FixedOrLost) / float64(c.Total)
 }
 
+// Calculate fixation events for every time point from 0 to 54, counting by 6
 func CountFixations(times []FixationTime) []FixationCount {
 	var counts []FixationCount
 	for i:=0.0; i<54.1; i+=6.0 {
@@ -172,6 +175,7 @@ func FprintFixationCounts(w io.Writer, counts ...FixationCount) {
 	}
 }
 
+// Use in conjunction with PlotFixCurve to plot fixation counts over time
 func WriteFixationCounts(counts []FixationCount, path string) error {
 	w, err := os.Create(path)
 	if err != nil {
@@ -185,6 +189,7 @@ func WriteFixationCounts(counts []FixationCount, path string) error {
 	return nil
 }
 
+// Use in conjunction with WriteFixationCounts to plot fixation counts over time
 func PlotFixCurve(inpath, outpath string) error {
 	cmd := exec.Command("plotfixationcurve", inpath, outpath)
 	cmd.Stdout = os.Stdout

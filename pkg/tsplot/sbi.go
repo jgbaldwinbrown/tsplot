@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// Metadata set for a sync, bed, and info file relating to a group of populations
 type SyncBedInfo struct {
 	Sync string
 	Bed string
@@ -26,6 +27,7 @@ type SbiOptions struct {
 	Seed int
 }
 
+// if syncbedinfo config does not have categories, use this
 func ReadSyncBedInfo(r io.Reader) ([]SyncBedInfo, error) {
 	var out []SyncBedInfo
 
@@ -43,6 +45,7 @@ func ReadSyncBedInfo(r io.Reader) ([]SyncBedInfo, error) {
 	return out, nil
 }
 
+// if syncbedinfo config does have categories, use this
 func ReadSyncBedInfoCategories(r io.Reader) ([]SyncBedInfo, error) {
 	var out []SyncBedInfo
 
@@ -73,6 +76,9 @@ func SplitSbiByCategory(sbis []SyncBedInfo) [][]SyncBedInfo {
 	return out
 }
 
+// Generate plottables using sync, bed, and info, then plot these plottables
+// according to the options, then print max slope generations of these
+// plottables
 func ProcessSyncBedInfo(sbi SyncBedInfo, o SbiOptions) error {
 	sync, bed, info, err := ReadSBI(sbi)
 	if err != nil {

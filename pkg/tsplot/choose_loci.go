@@ -8,6 +8,7 @@ import (
 	"io"
 )
 
+// From a set of bed spans, choose a fixed number of randomly-chosen spans, ignoring any that intersect with "avoid"
 func ChooseSitesCore(count int, sites bedtools.Bedder, avoid bedtools.Bedder, r *rand.Rand) ([]bedtools.BedEntry, error) {
 	bc, err := bedtools.IntersectBeds(sites, []string{"-v"}, avoid)
 	if err != nil {
@@ -18,6 +19,7 @@ func ChooseSitesCore(count int, sites bedtools.Bedder, avoid bedtools.Bedder, r 
 	return rsites[:count], nil
 }
 
+// Wrapper for io.Reader that implements bedtools.Bedder.
 type BedReader struct {
 	r io.Reader
 }
@@ -26,6 +28,7 @@ func (b BedReader) Bed() (io.Reader, error) {
 	return b.r, nil
 }
 
+// Make a single-use BedReader from a sync slice
 func SyncEToBedReader(ss []SyncE) BedReader {
 	pr, pw := io.Pipe()
 	go func() {
@@ -38,6 +41,7 @@ func SyncEToBedReader(ss []SyncE) BedReader {
 	return BedReader{pr}
 }
 
+// Make a single-use BedReader from a bed slice
 func BedEToBedReader(ss []BedE) BedReader {
 	pr, pw := io.Pipe()
 	go func() {
@@ -50,7 +54,7 @@ func BedEToBedReader(ss []BedE) BedReader {
 	return BedReader{pr}
 }
 
-func ChooseSitesOld(count int, sites []SyncE, avoid []BedE, r *rand.Rand) ([]BedE, error) {
+func chooseSitesOld(count int, sites []SyncE, avoid []BedE, r *rand.Rand) ([]BedE, error) {
 	sitebr := SyncEToBedReader(sites)
 	avoidbr := BedEToBedReader(avoid)
 	spans, err := ChooseSitesCore(count, sitebr, avoidbr, r)
@@ -69,6 +73,7 @@ func ChooseSitesOld(count int, sites []SyncE, avoid []BedE, r *rand.Rand) ([]Bed
 	return out, nil
 }
 
+// Select a fixed number of sites from a sync slice
 func ChooseSites(count int, sites []SyncE, r *rand.Rand) ([]SyncE, error) {
 	rsites := slices.Clone(sites)
 	r.Shuffle(len(rsites), func(i, j int) {rsites[i], rsites[j] = rsites[j], rsites[i]})

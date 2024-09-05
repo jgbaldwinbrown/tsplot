@@ -81,15 +81,15 @@ func SetBeneficialsHigh36(s []SyncE, info []InfoE, expS []SyncE, expInfo []InfoE
 	}
 }
 
-func SetBeneficialOld(s *SyncE, info []InfoE) {
+func setBeneficialOld(s *SyncE, info []InfoE) {
 	beneficial, deleterious := GetBeneficialAndDeleteriousAFs(s.Afs, info)
 	s.PlotcolPrimary = beneficial
 	s.PlotcolSecondary = deleterious
 }
 
-func SetBeneficialsOld(s []SyncE, info []InfoE) {
+func setBeneficialsOld(s []SyncE, info []InfoE) {
 	for i, _ := range s {
-		SetBeneficialOld(&s[i], info)
+		setBeneficialOld(&s[i], info)
 	}
 }
 

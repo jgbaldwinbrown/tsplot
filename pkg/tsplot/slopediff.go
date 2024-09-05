@@ -9,16 +9,19 @@ import (
 	"os"
 )
 
+// Runtime options for doing SlopeDiff
 type SlopeDiffOpts struct {
 	Threads int
 }
 
+// Config for a single run of SlopeDiff
 type SlopeDiffCfg struct {
 	PolarizerPaths []string
 	SlopePaths []string
 	OutPre string
 }
 
+// Not used
 type SlopeDiffArgs struct {
 	Cfg SlopeDiffCfg
 	Opts SlopeDiffOpts

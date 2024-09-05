@@ -8,6 +8,7 @@ import (
 	"strconv"
 )
 
+// Convert correctly-formatted plottable line to accel.Af; population ins line[8], generation is line[7], freq is line[6]
 func PlottableLineToAf(line []string) (af accel.Af, err error) {
 	af.Pop = line[8]
 	gen, err := strconv.ParseInt(line[7], 0, 64)
@@ -24,6 +25,7 @@ func PlottableLineToAf(line []string) (af accel.Af, err error) {
 	return af, nil
 }
 
+// Read tab-separated file into [][]string
 func ReadPlottable(r io.Reader) (p [][]string) {
 	s := bufio.NewScanner(r)
 	s.Buffer(make([]byte, 0), 1e12)

@@ -17,6 +17,7 @@ type SyncIter struct {
 	Scanf lscan.Splitter
 }
 
+// Iterate over entries of a sync file
 func NewSyncIter(r io.ReadCloser) *SyncIter {
 	s := new(SyncIter)
 	s.Closer = r
@@ -36,7 +37,7 @@ func (g GzReader) Close() error {
 	return g.FileCloser.Close()
 }
 
-
+// Open sync file, which may be gzipped, as a *SyncIter
 func OpenSyncIter(path string) (*SyncIter, error) {
 
 	conn, err := os.Open(path)
